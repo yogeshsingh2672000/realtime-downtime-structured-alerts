@@ -33,4 +33,26 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-your-application/deploying) for more details.
+
+## Environment Configuration
+
+### Cookie Authentication (Local Development)
+
+For local development, cookies work automatically since frontend and backend are on the same domain:
+
+```bash
+# .env.local - Leave empty or don't create this file
+# NEXT_PUBLIC_API_BASE_URL=
+```
+
+### External Backend (Production)
+
+When using an external backend (like Render), cookies won't work due to cross-origin restrictions:
+
+```bash
+# .env.local
+NEXT_PUBLIC_API_BASE_URL=https://realtime-downtime-structured-alerts-cjc5.onrender.com
+```
+
+**Note:** With external backend, you'll need to implement token-based authentication instead of cookies.

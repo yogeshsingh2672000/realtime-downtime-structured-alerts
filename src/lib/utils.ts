@@ -1,8 +1,9 @@
 function withBaseUrl(input: RequestInfo | URL): string | URL {
+  // For local development, use relative URLs (same domain)
+  // For production with external backend, use full URL
   if (typeof input === "string") {
-    // const base = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
-    const base = "https://realtime-downtime-structured-alerts-cjc5.onrender.com";
-    if (input.startsWith("/")) return `${base}${input}`;
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+    if (base && input.startsWith("/")) return `${base}${input}`;
   }
   return input instanceof URL ? input : new URL(String(input));
 }
@@ -15,7 +16,7 @@ export async function apiFetch<T>(input: RequestInfo | URL, init?: RequestInit):
       "Content-Type": "application/json",
       ...(init?.headers || {}),
     },
-    // credentials: "include", // disable actual cookies for demo
+    credentials: "include", // disable actual cookies for demo
     cache: "no-store",
   });
   if (!res.ok) {
