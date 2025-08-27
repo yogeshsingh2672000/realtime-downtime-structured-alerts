@@ -1,11 +1,11 @@
-function withBaseUrl(input: RequestInfo | URL): string | URL {
+function withBaseUrl(input: RequestInfo | URL): RequestInfo | URL {
   // For local development, use relative URLs (same domain)
   // For production with external backend, use full URL
   if (typeof input === "string") {
     const base = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
     if (base && input.startsWith("/")) return `${base}${input}`;
   }
-  return input instanceof URL ? input : new URL(String(input));
+  return input;
 }
 
 export async function apiFetch<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
