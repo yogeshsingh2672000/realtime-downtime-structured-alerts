@@ -4,7 +4,7 @@ function withBaseUrl(input: RequestInfo | URL): string | URL {
     const base = "https://realtime-downtime-structured-alerts-cjc5.onrender.com";
     if (input.startsWith("/")) return `${base}${input}`;
   }
-  return input;
+  return input instanceof URL ? input : new URL(String(input));
 }
 
 export async function apiFetch<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
