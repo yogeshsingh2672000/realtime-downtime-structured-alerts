@@ -15,7 +15,7 @@ export async function apiFetch<T>(input: RequestInfo | URL, init?: RequestInit):
       "Content-Type": "application/json",
       ...(init?.headers || {}),
     },
-    credentials: "include",
+    // credentials: "include", // disable actual cookies for demo
     cache: "no-store",
   });
   if (!res.ok) {
