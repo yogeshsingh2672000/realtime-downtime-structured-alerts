@@ -24,3 +24,12 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Ensure native form controls render dark dropdowns and visible options */
+select, input, button, textarea {
+  color-scheme: dark;
+}
+select option {
+  background-color: #0a0a0a;
+  color: #ededed;
+}
