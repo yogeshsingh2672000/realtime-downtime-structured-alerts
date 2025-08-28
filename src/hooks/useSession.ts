@@ -1,7 +1,13 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
-import { ROUTES } from "@/lib/constants";
-import { apiFetch } from "@/lib/utils";
+import { useState, useCallback } from "react";
+
+// Hardcoded user for simplicity
+const HARDCODED_USER = {
+  id: "user_mock_google_1",
+  name: "Mock Google User",
+  email: "mock.user@gmail.com",
+  provider: "google",
+};
 
 type SessionState = {
   authenticated: boolean;
@@ -9,39 +15,33 @@ type SessionState = {
 };
 
 export function useSession() {
-  const [data, setData] = useState<SessionState | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await apiFetch<SessionState>(ROUTES.api.session, { method: "GET" });
-      setData(res);
-      setError(null);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to fetch session");
-      setData({ authenticated: false, user: null });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  const [authenticated, setAuthenticated] = useState<boolean>(false);
 
   const login = useCallback(async () => {
-    await apiFetch(ROUTES.api.login, { method: "POST" });
-    await refresh();
-  }, [refresh]);
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setAuthenticated(true);
+  }, []);
 
   const logout = useCallback(async () => {
-    await apiFetch(ROUTES.api.logout, { method: "POST" });
-    await refresh();
-  }, [refresh]);
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setAuthenticated(false);
+  }, []);
 
-  return { data, loading, error, login, logout, refresh };
+  const data: SessionState = {
+    authenticated,
+    user: authenticated ? HARDCODED_USER : null,
+  };
+
+  return { 
+    data, 
+    loading: false, 
+    error: null, 
+    login, 
+    logout, 
+    refresh: () => {} // No-op for compatibility
+  };
 }
 
 
