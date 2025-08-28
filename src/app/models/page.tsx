@@ -16,14 +16,13 @@ import { ROUTES } from "@/lib/constants";
 export default function ModelsPage() {
   const router = useRouter();
   const { items, loading, error, empty, create, update, remove } = useModels();
-  const { logout } = useSession();
+  const { data, logout } = useSession();
 
   const [form, setForm] = useState({
     modelName: "",
     provider: "",
     description: "",
     version: "",
-    updatedBy: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -35,15 +34,21 @@ export default function ModelsPage() {
       setSubmitError("Model name and provider are required");
       return;
     }
+    if (!data?.user?.id || !data?.user?.name) {
+      setSubmitError("You must be logged in to create or update models");
+      return;
+    }
     try {
       setSubmitting(true);
-      await create(form);
+      await create({
+        ...form,
+        updatedBy: `${data.user.id} - ${data.user.name}`,
+      });
       setForm({
         modelName: "",
         provider: "",
         description: "",
         version: "",
-        updatedBy: "",
       });
     } catch (err: any) {
       setSubmitError(err?.message ?? "Failed to add model");
@@ -127,16 +132,7 @@ export default function ModelsPage() {
                 placeholder="Short description"
               />
             </div>
-            <div>
-              <label className="text-xs text-white/70">Updated by</label>
-              <Input
-                value={form.updatedBy}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, updatedBy: e.target.value }))
-                }
-                placeholder="Your name"
-              />
-            </div>
+            {/* Updated by field removed - set by server */}
             <div className="md:col-span-3 flex items-center gap-3">
               <Button type="submit" disabled={submitting}>
                 {submitting ? "Saving…" : "Save"}
@@ -178,7 +174,7 @@ export default function ModelsPage() {
                   </div>
                   <div className="hidden md:block">
                     <p className="text-xs text-white/60">Updated by</p>
-                    <p className="text-sm">{m.updatedBy ?? "—"}</p>
+                    <p className="text-sm">{m.updatedBy ?? "system"}</p>
                   </div>
                   <div className="flex gap-2 md:justify-end">
                     <Button variant="ghost" onClick={() => remove(m.id)}>

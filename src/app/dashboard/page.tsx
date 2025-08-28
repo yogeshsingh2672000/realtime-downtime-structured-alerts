@@ -109,6 +109,12 @@ export default function DashboardPage() {
           >
             Profile
           </Button>
+          <Button
+            variant="ghost"
+            onClick={() => router.push(ROUTES.pages.models)}
+          >
+            Models
+          </Button>
           <Button variant="ghost" onClick={() => logout()}>
             Log out
           </Button>

@@ -31,7 +31,7 @@ export function useSession() {
 
   const data: SessionState = {
     authenticated,
-    user: authenticated ? HARDCODED_USER : null,
+    user: HARDCODED_USER, //authenticated ? HARDCODED_USER : null,
   };
 
   return { 
