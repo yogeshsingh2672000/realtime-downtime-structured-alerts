@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -10,35 +10,85 @@ import {
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
-import { LLM_PROVIDERS, PROVIDER_TO_MODELS, ROUTES } from "@/lib/constants";
-import { useAlerts } from "@/hooks/useAlerts";
+import { ROUTES } from "@/lib/constants";
 import { useSession } from "@/hooks/useSession";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { useModels } from "@/hooks/useModels";
+import { useUserModelMapper } from "@/hooks/useUserModelMapper";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { items, loading, error, empty, create, remove } = useAlerts();
   const { logout } = useSession();
+  const { profile } = useUserProfile();
+  const { items: modelItems } = useModels();
+  const userId = profile?.id ? Number(profile.id) : undefined;
+  const { items, loading, error, empty, create, update, remove } =
+    useUserModelMapper(userId);
 
   const [email, setEmail] = useState("");
-  const [provider, setProvider] = useState(LLM_PROVIDERS[0].id);
-  const models = useMemo(() => PROVIDER_TO_MODELS[provider] ?? [], [provider]);
-  const [model, setModel] = useState(models[0]?.id ?? "");
+  const providers = useMemo(() => {
+    const uniq = new Set<string>();
+    for (const m of modelItems) {
+      if (m.provider) uniq.add(m.provider);
+    }
+    return Array.from(uniq);
+  }, [modelItems]);
+  const [provider, setProvider] = useState("");
+  const models = useMemo(() => {
+    return modelItems
+      .filter((m) => m.provider === provider)
+      .map((m) => ({ id: String(m.id), name: m.modelName ?? "—" }));
+  }, [modelItems, provider]);
+  const [model, setModel] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Initialize provider from DB once models load
+  useEffect(() => {
+    if (!provider && providers.length > 0) {
+      setProvider(providers[0]);
+    }
+  }, [providers, provider]);
+
+  // Initialize or correct model when provider or model list changes
+  useEffect(() => {
+    const first = models[0]?.id ?? "";
+    if (!model || !models.find((m) => m.id === model)) {
+      setModel(first);
+    }
+  }, [models, model]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
-    if (!email || !provider || !model) {
-      setSubmitError("Please fill all fields");
+    if (!provider || !model) {
+      setSubmitError("Please select provider and model");
+      return;
+    }
+    if (!userId) {
+      setSubmitError("User not loaded yet");
       return;
     }
     try {
       setSubmitting(true);
-      await create({ email, llmProvider: provider, model });
-      setEmail("");
+      const dbModel = modelItems.find(
+        (m) => String(m.id) === model && m.provider === provider
+      );
+      if (!dbModel) {
+        throw new Error(
+          "Selected model not found in database. Add it on Models page first."
+        );
+      }
+      const current = items.find((m) => m.user_id === userId);
+      if (!current) {
+        await create({ user_id: userId, model_id: [Number(dbModel.id)] });
+      } else {
+        const setIds = new Set<number>(current.model_id ?? []);
+        setIds.add(Number(dbModel.id));
+        await update(current.id, { model_id: Array.from(setIds) });
+      }
     } catch (err: any) {
-      setSubmitError(err?.message ?? "Failed to add alert");
+      setSubmitError(err?.message ?? "Failed to save mapping");
     } finally {
       setSubmitting(false);
     }
@@ -89,14 +139,13 @@ export default function DashboardPage() {
                 onChange={(e) => {
                   const next = e.target.value;
                   setProvider(next);
-                  const firstModel =
-                    (PROVIDER_TO_MODELS[next] ?? [])[0]?.id ?? "";
+                  const firstModel = models[0]?.id ?? "";
                   setModel(firstModel);
                 }}
               >
-                {LLM_PROVIDERS.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
+                {providers.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
                   </option>
                 ))}
               </Select>
@@ -129,28 +178,28 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           {loading && (
-            <p className="text-sm text-white/70">Loading destinations…</p>
+            <p className="text-sm text-white/70">Loading mappings…</p>
           )}
           {error && <p className="text-sm text-red-400">{error}</p>}
           {empty && (
             <p className="text-sm text-white/70">
-              No destinations yet. Add one above.
+              No mappings yet. Add one above.
             </p>
           )}
           {!loading && !error && items.length > 0 && (
             <ul className="divide-y divide-white/10">
-              {items.map((item) => (
+              {items.map((entry) => (
                 <li
-                  key={item.id}
+                  key={entry.id}
                   className="py-3 flex items-center justify-between"
                 >
                   <div>
-                    <p className="text-sm font-medium">{item.email}</p>
+                    <p className="text-sm font-medium">User #{entry.user_id}</p>
                     <p className="text-xs text-white/60">
-                      {item.llmProvider} • {item.model}
+                      Models: {(entry.model_id ?? []).join(", ")}
                     </p>
                   </div>
-                  <Button variant="ghost" onClick={() => remove(item.id)}>
+                  <Button variant="ghost" onClick={() => remove(entry.id)}>
                     Remove
                   </Button>
                 </li>
@@ -160,7 +209,7 @@ export default function DashboardPage() {
         </CardContent>
         <CardFooter>
           <p className="text-xs text-white/50">
-            Destinations are stored per session (mock). Data resets on restart.
+            Mappings are stored in the database.
           </p>
         </CardFooter>
       </Card>

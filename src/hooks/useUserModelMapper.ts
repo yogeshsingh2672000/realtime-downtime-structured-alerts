@@ -3,57 +3,51 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ROUTES } from "@/lib/constants";
 import { apiFetch } from "@/lib/utils";
 
-export type ModelItem = {
+export type UserModelMap = {
   id: string;
-  createdAt: number;
-  modelName: string | null;
-  provider: string | null;
-  updatedAt: number | null;
-  description: string | null;
-  version: string | null;
-  updatedBy: string | null;
+  created_at: number;
+  updated_at: number | null;
+  user_id: number | null;
+  model_id: number[] | null;
 };
 
-type ListResponse = ModelItem[];
+type ListResponse = { items: UserModelMap[] };
+type CreateResponse = { item: UserModelMap };
+type UpdateResponse = { item: UserModelMap };
 
-type CreateBody = Partial<Pick<ModelItem, "model_name" | "model_provider" | "description" | "version" | "updated_by">>;
-
-type CreateResponse = { item: ModelItem };
-
-type UpdateResponse = { item: ModelItem };
-
-export function useModels() {
-  const [items, setItems] = useState<ModelItem[]>([]);
+export function useUserModelMapper(userId?: number) {
+  const [items, setItems] = useState<UserModelMap[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await apiFetch<ListResponse>(`${ROUTES.api.models}`);
-      setItems(res);
+      const qs = userId != null ? `?userId=${userId}` : "";
+      const res = await apiFetch<ListResponse>(`${ROUTES.api.userModelMapper}${qs}`);
+      setItems(res.items);
       setError(null);
     } catch (e: any) {
-      setError(e?.message ?? "Failed to load models");
+      setError(e?.message ?? "Failed to load mappings");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     void fetchAll();
   }, [fetchAll]);
 
-  const create = useCallback(async (body: CreateBody) => {
-    const res = await apiFetch<CreateResponse>(ROUTES.api.models, {
+  const create = useCallback(async (body: { user_id: number; model_id: number[] }) => {
+    const res = await apiFetch<CreateResponse>(ROUTES.api.userModelMapper, {
       method: "POST",
       body: JSON.stringify(body),
     });
     setItems((prev) => [res.item, ...prev]);
   }, []);
 
-  const update = useCallback(async (id: string, body: CreateBody) => {
-    const res = await apiFetch<UpdateResponse>(`${ROUTES.api.models}/${id}`, {
+  const update = useCallback(async (id: string, body: Partial<{ user_id: number; model_id: number[] }>) => {
+    const res = await apiFetch<UpdateResponse>(`${ROUTES.api.userModelMapper}/${id}`, {
       method: "PUT",
       body: JSON.stringify(body),
     });
@@ -61,7 +55,7 @@ export function useModels() {
   }, []);
 
   const remove = useCallback(async (id: string) => {
-    await apiFetch(`${ROUTES.api.models}/${id}`, { method: "DELETE" });
+    await apiFetch(`${ROUTES.api.userModelMapper}/${id}`, { method: "DELETE" });
     setItems((prev) => prev.filter((m) => m.id !== id));
   }, []);
 
@@ -69,3 +63,5 @@ export function useModels() {
 
   return { items, loading, error, empty, fetchAll, create, update, remove };
 }
+
+

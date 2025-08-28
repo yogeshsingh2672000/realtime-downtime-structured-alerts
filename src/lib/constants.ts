@@ -31,6 +31,7 @@ export const ROUTES = {
     alerts: "/api/alerts",
     user: "/api/user",
     models: "/api/models",
+    userModelMapper: "/api/user-model-mapper",
   },
   pages: {
     dashboard: "/dashboard",
