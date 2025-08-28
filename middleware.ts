@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const isDashboard = request.nextUrl.pathname.startsWith("/dashboard");
-  if (!isDashboard) return NextResponse.next();
+  const isProtected = request.nextUrl.pathname.startsWith("/dashboard") || 
+                     request.nextUrl.pathname.startsWith("/profile") ||
+                     request.nextUrl.pathname.startsWith("/models");
+  if (!isProtected) return NextResponse.next();
   const sessionCookie = request.cookies.get("session");
   try {
     const parsed = sessionCookie?.value ? JSON.parse(sessionCookie.value) : null;
@@ -15,7 +17,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/profile/:path*", "/models/:path*"],
 };
 
 

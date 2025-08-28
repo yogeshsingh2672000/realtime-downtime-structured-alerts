@@ -1,5 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -9,11 +10,12 @@ import {
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
-import { LLM_PROVIDERS, PROVIDER_TO_MODELS } from "@/lib/constants";
+import { LLM_PROVIDERS, PROVIDER_TO_MODELS, ROUTES } from "@/lib/constants";
 import { useAlerts } from "@/hooks/useAlerts";
 import { useSession } from "@/hooks/useSession";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { items, loading, error, empty, create, remove } = useAlerts();
   const { logout } = useSession();
 
@@ -46,9 +48,17 @@ export default function DashboardPage() {
     <div className="min-h-screen p-6 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Alert Destinations</h1>
-        <Button variant="ghost" onClick={() => logout()}>
-          Log out
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            variant="ghost"
+            onClick={() => router.push(ROUTES.pages.profile)}
+          >
+            Profile
+          </Button>
+          <Button variant="ghost" onClick={() => logout()}>
+            Log out
+          </Button>
+        </div>
       </div>
 
       <Card>

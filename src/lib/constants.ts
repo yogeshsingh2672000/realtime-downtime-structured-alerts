@@ -29,10 +29,14 @@ export const ROUTES = {
     logout: "/api/auth/logout",
     session: "/api/auth/session",
     alerts: "/api/alerts",
+    user: "/api/user",
+    models: "/api/models",
   },
   pages: {
     dashboard: "/dashboard",
     home: "/",
+    profile: "/profile",
+    models: "/models",
   },
 };
 
