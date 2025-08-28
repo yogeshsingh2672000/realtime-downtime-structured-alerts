@@ -1,13 +1,10 @@
 import { NextRequest } from "next/server";
 
-const BASE = (process.env.BACKEND_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
-if (!BASE) {
-	throw new Error("Missing BACKEND_API_BASE_URL (or NEXT_PUBLIC_API_BASE_URL) env var");
-}
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") || "";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
-	const target = `${BASE}/api/user-model-mapper/${id}`;
+	const target = `${API_BASE}/api/user-model-mapper/${id}`;
 	const cookie = req.headers.get("cookie") || "";
 	const res = await fetch(target, {
 		method: "PUT",
@@ -21,7 +18,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
-	const target = `${BASE}/api/user-model-mapper/${id}`;
+	const target = `${API_BASE}/api/user-model-mapper/${id}`;
 	const cookie = req.headers.get("cookie") || "";
 	const res = await fetch(target, {
 		method: "DELETE",
