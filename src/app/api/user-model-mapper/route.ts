@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") || "";
-const TARGET = `${API_BASE}/api/user-model-mapper`;
+const BASE = (process.env.BACKEND_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
+if (!BASE) {
+	throw new Error("Missing BACKEND_API_BASE_URL (or NEXT_PUBLIC_API_BASE_URL) env var");
+}
+const TARGET = `${BASE}/api/user-model-mapper`;
 
 export async function GET(req: NextRequest) {
 	const url = new URL(req.url);
