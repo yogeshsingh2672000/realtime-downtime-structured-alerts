@@ -20,7 +20,11 @@ export default function DashboardPage() {
   const router = useRouter();
   const { logout } = useSession();
   const { profile } = useUserProfile();
-  const { items: modelItems } = useModels();
+  const {
+    items: modelItems,
+    loading: modelsLoading,
+    error: modelsError,
+  } = useModels();
   const userId = profile?.id ? Number(profile.id) : undefined;
   const { items, loading, error, empty, create, update, remove } =
     useUserModelMapper(userId);
@@ -119,6 +123,7 @@ export default function DashboardPage() {
           </p>
         </CardHeader>
         <CardContent>
+          {modelsError && <p className="text-sm text-red-400">{modelsError}</p>}
           <form
             onSubmit={onSubmit}
             className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end"
@@ -142,6 +147,7 @@ export default function DashboardPage() {
                   const firstModel = models[0]?.id ?? "";
                   setModel(firstModel);
                 }}
+                disabled={modelsLoading || providers.length === 0}
               >
                 {providers.map((p) => (
                   <option key={p} value={p}>
@@ -152,7 +158,11 @@ export default function DashboardPage() {
             </div>
             <div>
               <label className="text-xs text-white/70">Model</label>
-              <Select value={model} onChange={(e) => setModel(e.target.value)}>
+              <Select
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                disabled={modelsLoading || models.length === 0}
+              >
                 {models.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}
