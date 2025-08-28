@@ -2,11 +2,13 @@ import { NextRequest } from "next/server";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") || "";
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-	const target = `${API_BASE}/api/user-model-mapper/${params.id}`;
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+	const { id } = await params;
+	const target = `${API_BASE}/api/user-model-mapper/${id}`;
+	const cookie = req.headers.get("cookie") || "";
 	const res = await fetch(target, {
 		method: "PUT",
-		headers: { "content-type": "application/json" },
+		headers: { "content-type": "application/json", cookie },
 		credentials: "include",
 		body: await req.text(),
 	});
@@ -14,11 +16,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 	return new Response(body, { status: res.status, headers: { "content-type": "application/json" } });
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-	const target = `${API_BASE}/api/user-model-mapper/${params.id}`;
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+	const { id } = await params;
+	const target = `${API_BASE}/api/user-model-mapper/${id}`;
+	const cookie = req.headers.get("cookie") || "";
 	const res = await fetch(target, {
 		method: "DELETE",
-		headers: { "content-type": "application/json" },
+		headers: { "content-type": "application/json", cookie },
 		credentials: "include",
 	});
 	const body = await res.text();
