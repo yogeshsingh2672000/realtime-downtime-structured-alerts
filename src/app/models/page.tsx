@@ -19,11 +19,11 @@ export default function ModelsPage() {
   const { logout } = useSession();
 
   const [form, setForm] = useState({
-    model_name: "",
-    model_provider: "",
+    modelName: "",
+    provider: "",
     description: "",
     version: "",
-    updated_by: "",
+    updatedBy: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export default function ModelsPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
-    if (!form.model_name || !form.model_provider) {
+    if (!form.modelName || !form.provider) {
       setSubmitError("Model name and provider are required");
       return;
     }
@@ -39,11 +39,11 @@ export default function ModelsPage() {
       setSubmitting(true);
       await create(form);
       setForm({
-        model_name: "",
-        model_provider: "",
+        modelName: "",
+        provider: "",
         description: "",
         version: "",
-        updated_by: "",
+        updatedBy: "",
       });
     } catch (err: any) {
       setSubmitError(err?.message ?? "Failed to add model");
@@ -90,9 +90,9 @@ export default function ModelsPage() {
             <div>
               <label className="text-xs text-white/70">Model name</label>
               <Input
-                value={form.model_name}
+                value={form.modelName}
                 onChange={(e) =>
-                  setForm((p) => ({ ...p, model_name: e.target.value }))
+                  setForm((p) => ({ ...p, modelName: e.target.value }))
                 }
                 placeholder="e.g., GPT-4o mini"
               />
@@ -100,9 +100,9 @@ export default function ModelsPage() {
             <div>
               <label className="text-xs text-white/70">Provider</label>
               <Input
-                value={form.model_provider}
+                value={form.provider}
                 onChange={(e) =>
-                  setForm((p) => ({ ...p, model_provider: e.target.value }))
+                  setForm((p) => ({ ...p, provider: e.target.value }))
                 }
                 placeholder="e.g., OpenAI"
               />
@@ -130,9 +130,9 @@ export default function ModelsPage() {
             <div>
               <label className="text-xs text-white/70">Updated by</label>
               <Input
-                value={form.updated_by}
+                value={form.updatedBy}
                 onChange={(e) =>
-                  setForm((p) => ({ ...p, updated_by: e.target.value }))
+                  setForm((p) => ({ ...p, updatedBy: e.target.value }))
                 }
                 placeholder="Your name"
               />
@@ -169,10 +169,8 @@ export default function ModelsPage() {
                   className="py-3 grid grid-cols-1 md:grid-cols-5 gap-2 items-center"
                 >
                   <div className="md:col-span-2">
-                    <p className="text-sm font-medium">{m.model_name ?? "—"}</p>
-                    <p className="text-xs text-white/60">
-                      {m.model_provider ?? "—"}
-                    </p>
+                    <p className="text-sm font-medium">{m.modelName ?? "—"}</p>
+                    <p className="text-xs text-white/60">{m.provider ?? "—"}</p>
                   </div>
                   <div>
                     <p className="text-xs text-white/60">Version</p>
@@ -180,7 +178,7 @@ export default function ModelsPage() {
                   </div>
                   <div className="hidden md:block">
                     <p className="text-xs text-white/60">Updated by</p>
-                    <p className="text-sm">{m.updated_by ?? "—"}</p>
+                    <p className="text-sm">{m.updatedBy ?? "—"}</p>
                   </div>
                   <div className="flex gap-2 md:justify-end">
                     <Button variant="ghost" onClick={() => remove(m.id)}>

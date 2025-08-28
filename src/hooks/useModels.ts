@@ -16,7 +16,7 @@ export type ModelItem = {
 
 type ListResponse = ModelItem[];
 
-type CreateBody = Partial<Pick<ModelItem, "model_name" | "model_provider" | "description" | "version" | "updated_by">>;
+type CreateBody = Partial<Pick<ModelItem, "modelName" | "provider" | "description" | "version" | "updatedBy">>;
 
 type CreateResponse = { item: ModelItem };
 
