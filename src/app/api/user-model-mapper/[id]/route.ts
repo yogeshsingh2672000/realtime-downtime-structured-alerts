@@ -1,26 +1,87 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") || "";
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user-model-mapper/${id}`;
+    
+    // Make API call to external endpoint using fetch
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
 
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-	const { id } = await params;
-	const target = `${API_BASE}/api/user-model-mapper/${id}`;
-	const res = await fetch(target, {
-		method: "PUT",
-		headers: { "content-type": "application/json" },
-		body: await req.text(),
-	});
-	const body = await res.text();
-	return new Response(body, { status: res.status, headers: { "content-type": "application/json" } });
+    if (!response.ok) {
+      // Forward the actual API error response structure
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json(
+        {
+          ...errorData // Preserve any additional error fields from the actual API
+        },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
+    
+  } catch (error) {
+    console.error('User Model Mapper API route error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return NextResponse.json(
+      { 
+        success: false,
+        error: 'Internal server error in user model mapper API route',
+        hint: 'Error occurred while processing user model mapper request in Next.js API route',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
+      { status: 500 }
+    );
+  }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-	const { id } = await params;
-	const target = `${API_BASE}/api/user-model-mapper/${id}`;
-	const res = await fetch(target, {
-		method: "DELETE",
-		headers: { "content-type": "application/json" },
-	});
-	const body = await res.text();
-	return new Response(body, { status: res.status, headers: { "content-type": "application/json" } });
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user-model-mapper/${id}`;
+    
+    // Make API call to external endpoint using fetch
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      // Forward the actual API error response structure
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json(
+        {
+          ...errorData // Preserve any additional error fields from the actual API
+        },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
+    
+  } catch (error) {
+    console.error('User Model Mapper API route error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return NextResponse.json(
+      { 
+        success: false,
+        error: 'Internal server error in user model mapper API route',
+        hint: 'Error occurred while processing user model mapper request in Next.js API route',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
+      { status: 500 }
+    );
+  }
 }

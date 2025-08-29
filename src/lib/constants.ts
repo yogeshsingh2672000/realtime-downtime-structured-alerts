@@ -25,11 +25,11 @@ export const PROVIDER_TO_MODELS: Record<string, { id: string; name: string }[]> 
 
 export const ROUTES = {
   api: {
-    // Backend API routes
+    // Local Next.js API routes
     login: "/api/auth/login",
     logout: "/api/auth/logout",
     session: "/api/auth/session",
-    alerts: "/api/alerts",
+
     user: "/api/user",
     models: "/api/models",
     userModelMapper: "/api/user-model-mapper",

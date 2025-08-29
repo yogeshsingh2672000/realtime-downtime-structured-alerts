@@ -38,13 +38,15 @@ export default function DashboardPage() {
     for (const m of modelItems) {
       if (m.provider) uniq.add(m.provider);
     }
-    return Array.from(uniq);
+    const result = Array.from(uniq);
+    return result;
   }, [modelItems]);
   const [provider, setProvider] = useState("");
   const models = useMemo(() => {
-    return modelItems
+    const result = modelItems
       .filter((m) => m.provider === provider)
       .map((m) => ({ id: String(m.id), name: m.modelName ?? "—" }));
+    return result;
   }, [modelItems, provider]);
   const [model, setModel] = useState("");
   const [submitting, setSubmitting] = useState(false);

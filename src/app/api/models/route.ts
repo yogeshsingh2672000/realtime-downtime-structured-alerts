@@ -1,65 +1,85 @@
-import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-type ModelItem = {
-  id: string;
-  created_at: number;
-  model_name: string | null;
-  model_provider: string | null;
-  updated_at: number | null;
-  description: string | null;
-  version: string | null;
-  updated_by: string | null;
-};
-
-const globalAny = globalThis as any;
-if (!globalAny.__modelsStore) {
-  globalAny.__modelsStore = new Map<string, ModelItem[]>();
-}
-const sessionIdToModels: Map<string, ModelItem[]> = globalAny.__modelsStore;
-
-async function getSessionId(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get("session");
-  if (!sessionCookie?.value) return null;
+export async function GET(request: NextRequest) {
   try {
-    const parsed = JSON.parse(sessionCookie.value);
-    return parsed.sessionId as string;
-  } catch {
-    return null;
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/models`;
+    
+    // Make API call to external endpoint using fetch
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      // Forward the actual API error response structure
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json(
+        {
+          ...errorData // Preserve any additional error fields from the actual API
+        },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
+    
+  } catch (error) {
+    console.error('Models API route error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return NextResponse.json(
+      { 
+        success: false,
+        error: 'Internal server error in models API route',
+        hint: 'Error occurred while processing models request in Next.js API route',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
+      { status: 500 }
+    );
   }
 }
 
-function genId(): string {
-  return `mdl_${Math.random().toString(36).slice(2)}_${Date.now()}`;
-}
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/models`;
+    
+    // Make API call to external endpoint using fetch
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
 
-export async function GET() {
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ items: [] });
-  const items = sessionIdToModels.get(sessionId) ?? [];
-  return NextResponse.json({ items });
-}
+    if (!response.ok) {
+      // Forward the actual API error response structure
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json(
+        {
+          ...errorData // Preserve any additional error fields from the actual API
+        },
+        { status: response.status }
+      );
+    }
 
-export async function POST(request: Request) {
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const body = await request.json().catch(() => null);
-  if (!body || typeof body !== "object") {
-    return NextResponse.json({ error: "invalid_body" }, { status: 400 });
+    const data = await response.json();
+    return NextResponse.json(data);
+    
+  } catch (error) {
+    console.error('Models API route error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return NextResponse.json(
+      { 
+        success: false,
+        error: 'Internal server error in models API route',
+        hint: 'Error occurred while processing models request in Next.js API route',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
+      { status: 500 }
+    );
   }
-  const now = Date.now();
-  const item: ModelItem = {
-    id: genId(),
-    created_at: now,
-    model_name: body.model_name ?? null,
-    model_provider: body.model_provider ?? null,
-    updated_at: null,
-    description: body.description ?? null,
-    version: body.version ?? null,
-    updated_by: body.updated_by ?? null,
-  };
-  const existing = sessionIdToModels.get(sessionId) ?? [];
-  sessionIdToModels.set(sessionId, [item, ...existing]);
-  return NextResponse.json({ item }, { status: 201 });
 }
