@@ -1,18 +1,19 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
+import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/constants";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useSession } from "@/hooks/useSession";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { Navbar } from "@/components/Navbar";
 
 export default function ProfilePage() {
   const router = useRouter();
   const { profile, loading, error, saving, save } = useUserProfile();
-  const { logout } = useSession();
+  const { isAuthenticated } = useAuthContext();
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -24,6 +25,13 @@ export default function ProfilePage() {
   const [dobError, setDobError] = useState<string | null>(null);
   const today = new Date().toISOString().split("T")[0];
   const dobInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace(ROUTES.pages.home);
+    }
+  }, [isAuthenticated, router]);
 
   // Update form when profile loads
   useEffect(() => {
@@ -62,10 +70,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleLogout = async () => {
-    await logout();
-    router.replace(ROUTES.pages.home);
-  };
+
 
   if (loading) {
     return (
@@ -81,20 +86,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen p-6 max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Your Profile</h1>
-        <div className="flex gap-3">
-          <Button
-            variant="ghost"
-            onClick={() => router.push(ROUTES.pages.dashboard)}
-          >
-            Dashboard
-          </Button>
-          <Button variant="ghost" onClick={handleLogout}>
-            Log out
-          </Button>
-        </div>
-      </div>
+      <Navbar title="Your Profile" showModels={false} />
 
       <Card>
         <CardHeader>

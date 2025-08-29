@@ -1,24 +1,20 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/Card";
+import { useState, useMemo, useEffect } from "react";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { Button } from "@/components/ui/Button";
+import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/constants";
-import { useSession } from "@/hooks/useSession";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useModels } from "@/hooks/useModels";
 import { useUserModelMapper } from "@/hooks/useUserModelMapper";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { Navbar } from "@/components/Navbar";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { logout } = useSession();
+  const { isAuthenticated } = useAuthContext();
   const { profile } = useUserProfile();
   const {
     items: modelItems,
@@ -28,6 +24,13 @@ export default function DashboardPage() {
   const userId = profile?.id ? Number(profile.id) : undefined;
   const { items, loading, error, empty, create, update, remove } =
     useUserModelMapper(userId);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace(ROUTES.pages.home);
+    }
+  }, [isAuthenticated, router]);
 
   const [email, setEmail] = useState("");
   const providers = useMemo(() => {
@@ -61,6 +64,8 @@ export default function DashboardPage() {
       setModel(first);
     }
   }, [models, model]);
+
+
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,26 +105,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen p-6 max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Alert Destinations</h1>
-        <div className="flex gap-3">
-          <Button
-            variant="ghost"
-            onClick={() => router.push(ROUTES.pages.profile)}
-          >
-            Profile
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => router.push(ROUTES.pages.models)}
-          >
-            Models
-          </Button>
-          <Button variant="ghost" onClick={() => logout()}>
-            Log out
-          </Button>
-        </div>
-      </div>
+      <Navbar title="Dashboard" showDashboard={false} />
 
       <Card>
         <CardHeader>

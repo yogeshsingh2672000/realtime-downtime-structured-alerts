@@ -1,42 +1,68 @@
-import { NextResponse } from "next/server";
-import { handleCors } from "@/lib/cors";
+import { NextRequest, NextResponse } from "next/server";
 
-// Simple mock user and session id generator
-function generateSessionId(): string {
-  return `sess_${Math.random().toString(36).slice(2)}_${Date.now()}`;
-}
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`;
+    
+    // Make API call to external endpoint using fetch
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
 
-export async function POST(request: Request) {
-  const corsResult = handleCors(request as any);
-  
-  // If it's an OPTIONS request, handleCors returns a NextResponse
-  if (corsResult instanceof NextResponse) {
-    return corsResult;
+    if (!response.ok) {
+      // Forward the actual API error response structure
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json(
+        {
+          // success: false,
+          // error: errorData.error || `Request failed with status ${response.status}`,
+          // statusCode: response.status,
+          ...errorData // Preserve any additional error fields from the actual API
+        },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    
+    // ===== FIRST USER LOGIC - REMOVE THIS SECTION IN FUTURE =====
+    // Create response with authentication flow cookie
+    const loginResponse = NextResponse.json(data);
+    
+    // Set cookie to mark that user has completed login flow
+    loginResponse.cookies.set('auth_flow_completed', 'true', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      path: '/',
+    });
+    
+    return loginResponse;
+    // ===== END FIRST USER LOGIC =====
+
+    // ===== ORIGINAL WORKING CODE - UNCOMMENT WHEN REMOVING FIRST USER LOGIC =====
+    // return NextResponse.json(data);
+    // ===== END ORIGINAL WORKING CODE =====
+    
+  } catch (error) {
+    console.error('Login API route error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return NextResponse.json(
+      { 
+        success: false,
+        error: 'Internal server error in login API route',
+        hint: 'Error occurred while processing login request in Next.js API route',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
+      { status: 500 }
+    );
   }
-  
-  const sessionId = generateSessionId();
-  const mockUser = {
-    id: "user_mock_google_1",
-    name: "Mock Google User",
-    email: "mock.user@gmail.com",
-    provider: "google",
-  };
-
-  const response = NextResponse.json({ ok: true, user: mockUser });
-  response.cookies.set("session", JSON.stringify({ sessionId, user: mockUser }), {
-    httpOnly: true,
-    sameSite: "none", // Changed from "lax" to "none" for cross-origin
-    secure: true,
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-  });
-  
-  // Add CORS headers
-  Object.entries(corsResult).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
-  
-  return response;
 }
 
 

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -9,14 +9,22 @@ import {
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useModels } from "@/hooks/useModels";
-import { useSession } from "@/hooks/useSession";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { Navbar } from "@/components/Navbar";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/constants";
 
 export default function ModelsPage() {
   const router = useRouter();
   const { items, loading, error, empty, create, update, remove } = useModels();
-  const { data, logout } = useSession();
+  const { user, isAuthenticated } = useAuthContext();
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace(ROUTES.pages.home);
+    }
+  }, [isAuthenticated, router]);
 
   const [form, setForm] = useState({
     modelName: "",
@@ -34,7 +42,7 @@ export default function ModelsPage() {
       setSubmitError("Model name and provider are required");
       return;
     }
-    if (!data?.user?.id || !data?.user?.name) {
+    if (!user?.id || !user?.name) {
       setSubmitError("You must be logged in to create or update models");
       return;
     }
@@ -42,7 +50,7 @@ export default function ModelsPage() {
       setSubmitting(true);
       await create({
         ...form,
-        updatedBy: `${data.user.id} - ${data.user.name}`,
+        updatedBy: `${user.id} - ${user.name}`,
       });
       setForm({
         modelName: "",
@@ -57,28 +65,11 @@ export default function ModelsPage() {
     }
   };
 
+
+
   return (
     <div className="min-h-screen p-6 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Models</h1>
-        <div className="flex gap-3">
-          <Button
-            variant="ghost"
-            onClick={() => router.push(ROUTES.pages.dashboard)}
-          >
-            Dashboard
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => router.push(ROUTES.pages.profile)}
-          >
-            Profile
-          </Button>
-          <Button variant="ghost" onClick={() => logout()}>
-            Log out
-          </Button>
-        </div>
-      </div>
+      <Navbar title="Models" />
 
       <Card>
         <CardHeader>
