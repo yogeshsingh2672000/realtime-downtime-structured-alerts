@@ -5,8 +5,9 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface User {
   id: string;
+  name: string;
   email: string;
-  username?: string;
+  provider?: string;
   admin?: boolean;
 }
 

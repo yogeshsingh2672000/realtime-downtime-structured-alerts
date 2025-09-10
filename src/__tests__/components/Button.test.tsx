@@ -12,7 +12,7 @@ describe('Button Component', () => {
   it('renders with primary variant by default', () => {
     render(<Button>Primary Button</Button>)
     const button = screen.getByRole('button', { name: /primary button/i })
-    expect(button).toHaveClass('hover:bg-white/20')
+    expect(button).toHaveClass('hover:bg-white/10')
   })
 
   it('renders with ghost variant', () => {

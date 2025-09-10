@@ -26,26 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    
-    // ===== FIRST USER LOGIC - REMOVE THIS SECTION IN FUTURE =====
-    // Create response and clear authentication flow cookie
-    const logoutResponse = NextResponse.json(data);
-    
-    // Clear the cookie to restart the authentication flow
-    logoutResponse.cookies.set('auth_flow_completed', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 0, // Expire immediately
-      path: '/',
-    });
-    
-    return logoutResponse;
-    // ===== END FIRST USER LOGIC =====
-
-    // ===== ORIGINAL WORKING CODE - UNCOMMENT WHEN REMOVING FIRST USER LOGIC =====
-    // return NextResponse.json(data);
-    // ===== END ORIGINAL WORKING CODE =====
+    return NextResponse.json(data);
     
   } catch (error) {
     console.error('Logout API route error:', error);

@@ -10,7 +10,7 @@ import { useAlert } from '@/contexts/AlertContext';
 import { ROUTES } from '@/lib/constants';
 import { ApiService } from '@/lib/api';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { tokenStorage } from '@/lib/tokenStorage';
+// Removed tokenStorage - using API service instead
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -76,24 +76,8 @@ export default function RegisterPage() {
       const { confirmPassword, ...registrationData } = formData;
       const response = await ApiService.register(registrationData);
       
-      // If registration includes tokens, store them
-      if (response.ok && response.user && response.accessToken && response.expiresIn) {
-        const userData = {
-          id: response.user.id,
-          email: response.user.email,
-          username: response.user.username,
-          admin: response.user.admin,
-        };
-
-        tokenStorage.setTokens(
-          {
-            accessToken: response.accessToken,
-            refreshToken: '', // Will be set by cookie
-            expiresAt: Date.now() + (response.expiresIn * 1000),
-          },
-          userData
-        );
-
+      // Registration successful - tokens are automatically stored by API service
+      if (response.ok && response.user) {
         showSuccess('Registration successful! Welcome!', 'Success');
         router.push(ROUTES.pages.dashboard);
       } else {

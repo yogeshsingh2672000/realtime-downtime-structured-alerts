@@ -10,7 +10,6 @@ import { ROUTES } from '@/lib/constants';
 import { useRouter } from 'next/navigation';
 import { ApiService } from '@/lib/api';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { tokenStorage } from '@/lib/tokenStorage';
 
 export default function Home() {
   const router = useRouter();

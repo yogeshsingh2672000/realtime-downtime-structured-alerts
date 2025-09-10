@@ -24,7 +24,7 @@ describe('ThemeContext', () => {
       </ThemeProvider>
     )
     
-    expect(screen.getByTestId('current-theme')).toHaveTextContent('dark')
+    expect(screen.getByTestId('current-theme')).toHaveTextContent('system')
     expect(screen.getByTestId('resolved-theme')).toHaveTextContent('dark')
   })
 

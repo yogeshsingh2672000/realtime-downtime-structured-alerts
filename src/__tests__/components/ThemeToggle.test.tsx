@@ -27,7 +27,7 @@ describe('ThemeToggle Component', () => {
     expect(button).toBeInTheDocument()
   })
 
-  it('displays dark theme icon by default', () => {
+  it('displays system theme icon by default', () => {
     render(
       <MockThemeProvider>
         <ThemeToggle />
@@ -35,7 +35,7 @@ describe('ThemeToggle Component', () => {
     )
     
     const button = screen.getByRole('button')
-    expect(button).toHaveTextContent('🌙')
+    expect(button).toHaveTextContent('🖥️')
   })
 
   it('cycles through themes when clicked', () => {
@@ -47,17 +47,17 @@ describe('ThemeToggle Component', () => {
     
     const button = screen.getByRole('button')
     
-    // Click to cycle to system theme
-    fireEvent.click(button)
-    expect(button).toHaveTextContent('🖥️')
-    
     // Click to cycle to light theme
     fireEvent.click(button)
     expect(button).toHaveTextContent('☀️')
     
-    // Click to cycle back to dark theme
+    // Click to cycle to dark theme
     fireEvent.click(button)
     expect(button).toHaveTextContent('🌙')
+    
+    // Click to cycle back to system theme
+    fireEvent.click(button)
+    expect(button).toHaveTextContent('🖥️')
   })
 
   it('has proper accessibility attributes', () => {

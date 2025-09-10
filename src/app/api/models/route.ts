@@ -4,11 +4,15 @@ export async function GET(request: NextRequest) {
   try {
     const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/models`;
     
+    // Get Authorization header from the incoming request
+    const authHeader = request.headers.get('authorization');
+    
     // Make API call to external endpoint using fetch
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        ...(authHeader && { 'Authorization': authHeader }),
       },
     });
 
@@ -46,11 +50,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/models`;
     
+    // Get Authorization header from the incoming request
+    const authHeader = request.headers.get('authorization');
+    
     // Make API call to external endpoint using fetch
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(authHeader && { 'Authorization': authHeader }),
       },
       body: JSON.stringify(body),
     });

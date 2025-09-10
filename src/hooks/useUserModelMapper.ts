@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ROUTES } from "@/lib/constants";
+import { ApiService } from "@/lib/api";
 
 export type UserModelMap = {
   id: string;
@@ -24,11 +24,7 @@ export function useUserModelMapper(userId?: number) {
   const fetchAll = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(ROUTES.api.userModelMapper, { method: "GET" });
-      if (!res.ok) {
-        throw new Error(`Failed to load mappings: ${res.status}`);
-      }
-      const data = await res.json();
+      const data = await ApiService.getUserModelMappers(userId || 0);
       setItems(normalize(data));
       setError(null);
     } catch (e: any) {
@@ -37,26 +33,14 @@ export function useUserModelMapper(userId?: number) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     void fetchAll();
   }, [fetchAll]);
 
   const create = useCallback(async (body: { user_id: number; model_id: number[] }) => {
-    const res = await fetch(ROUTES.api.userModelMapper, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-    
-    if (!res.ok) {
-      throw new Error(`Failed to create mapping: ${res.status}`);
-    }
-    
-    const data = await res.json();
+    const data = await ApiService.createUserModelMapper(body);
     const item = (data && data.item) as UserModelMap | undefined;
     if (item) {
       setItems((prev) => [item, ...prev]);
@@ -67,19 +51,7 @@ export function useUserModelMapper(userId?: number) {
   }, [fetchAll]);
 
   const update = useCallback(async (id: string, body: Partial<Pick<UserModelMap, "user_id" | "model_id">>) => {
-    const res = await fetch(`${ROUTES.api.userModelMapper}/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-    
-    if (!res.ok) {
-      throw new Error(`Failed to update mapping: ${res.status}`);
-    }
-    
-    const data = await res.json();
+    const data = await ApiService.updateUserModelMapper(id, body);
     const item = (data && data.item) as UserModelMap | undefined;
     if (item) {
       setItems((prev) => prev.map((m) => (m.id === id ? item : m)));
@@ -90,12 +62,7 @@ export function useUserModelMapper(userId?: number) {
   }, [fetchAll]);
 
   const remove = useCallback(async (id: string) => {
-    const res = await fetch(`${ROUTES.api.userModelMapper}/${id}`, { method: "DELETE" });
-    
-    if (!res.ok) {
-      throw new Error(`Failed to delete mapping: ${res.status}`);
-    }
-    
+    await ApiService.deleteUserModelMapper(id);
     setItems((prev) => prev.filter((m) => m.id !== id));
   }, []);
 

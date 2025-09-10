@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ROUTES } from "@/lib/constants";
+import { ApiService } from "@/lib/api";
 
 export type ModelItem = {
   id: string;
@@ -26,11 +26,7 @@ export function useModels() {
   const fetchAll = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(ROUTES.api.models);
-      if (!res.ok) {
-        throw new Error(`Failed to load models: ${res.status}`);
-      }
-      const data: ListResponse = await res.json();
+      const data: ListResponse = await ApiService.getModels();
       console.log("📡 Raw API response:", data);
       console.log("📊 Number of items received:", data?.length || 0);
       console.log("📋 Items array:", data);
@@ -49,19 +45,7 @@ export function useModels() {
   }, [fetchAll]);
 
   const create = useCallback(async (body: CreateBody) => {
-    const res = await fetch(ROUTES.api.models, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-    
-    if (!res.ok) {
-      throw new Error(`Failed to create model: ${res.status}`);
-    }
-    
-    const data: CreateResponse = await res.json();
+    const data: CreateResponse = await ApiService.createModel(body as any);
     if (data.item) {
       setItems((prev) => [data.item, ...prev]);
     } else {
@@ -71,19 +55,7 @@ export function useModels() {
   }, [fetchAll]);
 
   const update = useCallback(async (id: string, body: CreateBody) => {
-    const res = await fetch(`${ROUTES.api.models}/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-    
-    if (!res.ok) {
-      throw new Error(`Failed to update model: ${res.status}`);
-    }
-    
-    const data: UpdateResponse = await res.json();
+    const data: UpdateResponse = await ApiService.updateModel(id, body as any);
     if (data.item) {
       setItems((prev) => prev.map((m) => (m.id === id ? data.item : m)));
     } else {
@@ -93,14 +65,7 @@ export function useModels() {
   }, [fetchAll]);
 
   const remove = useCallback(async (id: string) => {
-    const res = await fetch(`${ROUTES.api.models}/${id}`, { 
-      method: "DELETE" 
-    });
-    
-    if (!res.ok) {
-      throw new Error(`Failed to delete model: ${res.status}`);
-    }
-    
+    await ApiService.deleteModel(id);
     setItems((prev) => prev.filter((m) => m.id !== id));
   }, []);
 

@@ -1,13 +1,13 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { ROUTES } from "@/lib/constants";
+import { ApiService } from "@/lib/api";
 
 export type UserProfile = {
   id: string;
   first_name: string | null;
   last_name: string | null;
   email: string | null;
-  phone_number: string | null;
+  phone_number: number | null;
   date_of_birth: string | null; // YYYY-MM-DD
   admin: boolean | null;
   created_at: number;
@@ -27,13 +27,7 @@ export function useUserProfile() {
   const refresh = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(ROUTES.api.user);
-      
-      if (!res.ok) {
-        throw new Error(`Failed to load profile: ${res.status}`);
-      }
-      
-      const data: GetResponse = await res.json();
+      const data: GetResponse = await ApiService.getUserProfile();
       
       // Handle different response formats
       if ('profile' in data) {
@@ -59,19 +53,7 @@ export function useUserProfile() {
   const save = useCallback(async (body: PutBody) => {
     try {
       setSaving(true);
-      const res = await fetch(ROUTES.api.user, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
-      
-      if (!res.ok) {
-        throw new Error(`Failed to save profile: ${res.status}`);
-      }
-      
-      const data: PutResponse = await res.json();
+      const data: PutResponse = await ApiService.updateUserProfile(body);
       
       if (data.profile) {
         setProfile(data.profile);

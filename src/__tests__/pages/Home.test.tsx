@@ -20,7 +20,6 @@ jest.mock('next/navigation', () => ({
 jest.mock('../../lib/api', () => ({
   ApiService: {
     login: jest.fn(),
-    getSession: jest.fn(() => Promise.resolve({ authenticated: false, user: null })),
   },
 }))
 

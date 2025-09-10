@@ -1,6 +1,4 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { tokenStorage } from './tokenStorage';
-import { tokenRefreshService } from './tokenRefresh';
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
@@ -12,14 +10,30 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
+  withCredentials: false, // No cookies needed
 });
 
-// Request interceptor - Add access token to requests
+// Token management
+let accessToken: string | null = null;
+let refreshToken: string | null = null;
+
+export const setTokens = (access: string, refresh: string) => {
+  accessToken = access;
+  refreshToken = refresh;
+};
+
+export const clearTokens = () => {
+  accessToken = null;
+  refreshToken = null;
+};
+
+export const getTokens = () => ({ accessToken, refreshToken });
+
+// Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    const accessToken = tokenStorage.getAccessToken();
-    if (accessToken && !tokenStorage.isAccessTokenExpired()) {
+    // Add access token to requests
+    if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
     return config;
@@ -29,45 +43,45 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor - Handle token refresh and retry
+// Response interceptor
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
-
-    // Handle token refresh for 401 errors
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    
+    // Handle token refresh on 401 errors
+    if (error.response?.status === 401 && !originalRequest._retry && refreshToken) {
       originalRequest._retry = true;
-
-      // Check if it's a token-related error
-      if (
-        tokenRefreshService.isTokenExpiredError(error) ||
-        tokenRefreshService.isSessionExpiredError(error)
-      ) {
-        try {
-          const newToken = await tokenRefreshService.refreshAccessToken();
-          if (newToken) {
-            // Retry the original request with new token
-            originalRequest.headers.Authorization = `Bearer ${newToken}`;
-            return apiClient(originalRequest);
-          }
-        } catch (refreshError) {
-          console.error('Token refresh failed:', refreshError);
-          // Clear tokens and redirect to login
-          tokenStorage.clearTokens();
-          // You might want to dispatch a logout action here
-          window.location.href = '/';
-          return Promise.reject(refreshError);
-        }
+      
+      try {
+        const response = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
+          refresh_token: refreshToken
+        });
+        
+        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
+        setTokens(newAccessToken, newRefreshToken);
+        
+        // Retry original request with new token
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        return apiClient(originalRequest);
+      } catch (refreshError) {
+        // Refresh failed, clear tokens
+        clearTokens();
+        return Promise.reject(refreshError);
       }
     }
-
-    // Handle other common errors
-    if (error.response?.status === 403) {
+    
+    // Handle common errors
+    if (error.response?.status === 401) {
+      // Handle unauthorized access
+      console.error('Unauthorized access');
+    } else if (error.response?.status === 403) {
+      // Handle forbidden access
       console.error('Forbidden access');
     } else if (error.response?.status >= 500) {
+      // Handle server errors
       console.error('Server error:', error.response?.data);
     }
     
@@ -85,16 +99,26 @@ export class ApiService {
     phone_number: string;
   }) {
     const response = await apiClient.post('/api/auth/register', data);
+    const { accessToken, refreshToken } = response.data;
+    if (accessToken && refreshToken) {
+      setTokens(accessToken, refreshToken);
+    }
     return response.data;
   }
 
   static async login(data: { email: string; password: string }) {
     const response = await apiClient.post('/api/auth/login', data);
+    const { accessToken, refreshToken } = response.data;
+    if (accessToken && refreshToken) {
+      setTokens(accessToken, refreshToken);
+    }
     return response.data;
   }
 
   static async logout() {
-    const response = await apiClient.post('/api/auth/logout');
+    const { refreshToken } = getTokens();
+    const response = await apiClient.post('/api/auth/logout', { refresh_token: refreshToken });
+    clearTokens();
     return response.data;
   }
 
