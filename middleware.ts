@@ -6,11 +6,14 @@ export function middleware(request: NextRequest) {
                      request.nextUrl.pathname.startsWith("/profile") ||
                      request.nextUrl.pathname.startsWith("/models");
   if (!isProtected) return NextResponse.next();
-  const sessionCookie = request.cookies.get("session");
-  try {
-    const parsed = sessionCookie?.value ? JSON.parse(sessionCookie.value) : null;
-    if (parsed?.sessionId) return NextResponse.next();
-  } catch {}
+  
+  // Check for the auth_flow_completed cookie that's set by the login API
+  const authFlowCookie = request.cookies.get("auth_flow_completed");
+  if (authFlowCookie?.value === "true") {
+    return NextResponse.next();
+  }
+  
+  // If no auth cookie, redirect to home
   const url = request.nextUrl.clone();
   url.pathname = "/";
   return NextResponse.redirect(url);
