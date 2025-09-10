@@ -40,7 +40,7 @@ export default function ProfilePage() {
         first_name: profile.first_name ?? "",
         last_name: profile.last_name ?? "",
         email: profile.email ?? "",
-        phone_number: profile.phone_number?.toString() ?? "",
+        phone_number: profile.phone_number ?? "",
         date_of_birth: profile.date_of_birth ?? "",
         admin: profile.admin ?? false,
       });
@@ -59,9 +59,7 @@ export default function ProfilePage() {
         first_name: formData.first_name || null,
         last_name: formData.last_name || null,
         email: formData.email || null,
-        phone_number: formData.phone_number
-          ? Number(formData.phone_number)
-          : null,
+        phone_number: formData.phone_number || null,
         date_of_birth: formData.date_of_birth || null,
         admin: formData.admin,
       });

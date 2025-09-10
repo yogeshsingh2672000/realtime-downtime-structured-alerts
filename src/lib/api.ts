@@ -137,7 +137,7 @@ export class ApiService {
     first_name?: string | null;
     last_name?: string | null;
     email?: string | null;
-    phone_number?: number | null;
+    phone_number?: string | null;
     date_of_birth?: string | null;
     admin?: boolean;
   }) {
@@ -194,7 +194,7 @@ export class ApiService {
 
   static async updateUserModelMapper(id: string, data: {
     user_id?: number;
-    model_id?: number[];
+    model_id?: number[] | null;
   }) {
     const response = await apiClient.put(`/api/user-model-mapper/${id}`, data);
     return response.data;
