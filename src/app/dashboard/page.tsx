@@ -11,6 +11,7 @@ import { useModels } from "@/hooks/useModels";
 import { useUserModelMapper } from "@/hooks/useUserModelMapper";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useAlert } from "@/contexts/AlertContext";
+import { useEmail } from "@/hooks/useEmail";
 import { Navbar } from "@/components/Navbar";
 
 export default function DashboardPage() {
@@ -18,6 +19,7 @@ export default function DashboardPage() {
   const { isAuthenticated } = useAuthContext();
   const { profile } = useUserProfile();
   const { showSuccess, showError, showInfo } = useAlert();
+  const { triggerEmail: sendEmail, loading: emailLoading } = useEmail();
   const {
     items: modelItems,
     loading: modelsLoading,
@@ -120,23 +122,61 @@ export default function DashboardPage() {
     }
   };
 
-  const triggerEmail = (email: string, type: 'downtime' | 'uptime') => {
+  const triggerEmail = async (email: string, type: 'downtime' | 'uptime') => {
     if (!email) {
       showError("Please configure your email address first", "Email Required");
       return;
     }
 
-    if (type === 'downtime') {
-      showInfo(
-        `A service down alert email has been sent to ${email}. Check your inbox to see the notification format.`,
-        "Service Down Alert Sent",
-        8000
-      );
-    } else {
-      showSuccess(
-        `A service up alert email has been sent to ${email}. Check your inbox to see the notification format.`,
-        "Service Up Alert Sent",
-        8000
+    // Get the selected model name for the email
+    const selectedModel = modelItems.find(m => 
+      String(m.id) === model && m.provider === provider
+    );
+
+    if (!selectedModel) {
+      showError("Please select a valid model first", "Model Required");
+      return;
+    }
+
+    try {
+      const payload = {
+        emailType: (type === 'downtime' ? 'downtime' : 'uptime') as 'downtime' | 'uptime',
+        emailAddress: email,
+        modelName: selectedModel.modelName || 'gpt-4o-mini',
+        duration: type === 'downtime' ? '2 hours' : '15 minutes',
+        serviceName: 'Example Service',
+        additionalInfo: type === 'downtime' 
+          ? 'Service is currently experiencing downtime and is unavailable.'
+          : 'Service has been restored and is now operational.'
+      };
+
+      const result = await sendEmail(payload);
+      console.log('Email result:', result); // Debug log
+
+      if (result.ok || result.success) {
+        if (type === 'downtime') {
+          showInfo(
+            `Service down alert email has been sent to ${email}. Check your inbox to see the notification format.`,
+            "Service Down Alert Sent",
+            8000
+          );
+        } else {
+          showSuccess(
+            `Service up alert email has been sent to ${email}. Check your inbox to see the notification format.`,
+            "Service Up Alert Sent",
+            8000
+          );
+        }
+      } else {
+        showError(
+          result.error || "Failed to send email",
+          "Email Error"
+        );
+      }
+    } catch (error) {
+      showError(
+        "Failed to send email. Please try again.",
+        "Email Error"
       );
     }
   }
@@ -284,16 +324,18 @@ export default function DashboardPage() {
                         <Button
                           variant="ghost"
                           onClick={() => triggerEmail(profile?.email || '', 'downtime')}
-                          className="text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 text-sm px-3 py-1"
+                          disabled={emailLoading}
+                          className="text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 text-sm px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Preview Down Alert
+                          {emailLoading ? "Sending..." : "Send Down Alert"}
                         </Button>
                         <Button
                           variant="ghost"
                           onClick={() => triggerEmail(profile?.email || '', 'uptime')}
-                          className="text-green-400 hover:text-green-300 hover:bg-green-500/10 text-sm px-3 py-1"
+                          disabled={emailLoading}
+                          className="text-green-400 hover:text-green-300 hover:bg-green-500/10 text-sm px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Preview Up Alert
+                          {emailLoading ? "Sending..." : "Send Up Alert"}
                         </Button>
                       </div>
                   </div>
