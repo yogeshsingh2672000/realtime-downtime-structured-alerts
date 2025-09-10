@@ -139,7 +139,7 @@ export class ApiService {
     email?: string | null;
     phone_number?: string | null;
     date_of_birth?: string | null;
-    admin?: boolean;
+    admin?: boolean | null;
   }) {
     const response = await apiClient.put('/api/user', data);
     return response.data;
