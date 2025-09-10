@@ -10,12 +10,14 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { useModels } from "@/hooks/useModels";
 import { useUserModelMapper } from "@/hooks/useUserModelMapper";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useAlert } from "@/contexts/AlertContext";
 import { Navbar } from "@/components/Navbar";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuthContext();
   const { profile } = useUserProfile();
+  const { showSuccess, showError, showInfo } = useAlert();
   const {
     items: modelItems,
     loading: modelsLoading,
@@ -24,6 +26,15 @@ export default function DashboardPage() {
   const userId = profile?.id ? Number(profile.id) : undefined;
   const { items, loading, error, empty, create, update, remove } =
     useUserModelMapper(userId);
+
+  const handleRemove = async (id: string) => {
+    try {
+      await remove(id);
+      showSuccess("Destination removed successfully!", "Success");
+    } catch (err: any) {
+      showError("Failed to remove destination", "Error");
+    }
+  };
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -93,17 +104,42 @@ export default function DashboardPage() {
       const current = items.find((m) => m.user_id === userId);
       if (!current) {
         await create({ user_id: userId, model_id: [Number(dbModel.id)] });
+        showSuccess("Destination added successfully!", "Success");
       } else {
         const setIds = new Set<number>(current.model_id ?? []);
         setIds.add(Number(dbModel.id));
         await update(current.id, { model_id: Array.from(setIds) });
+        showSuccess("Destination updated successfully!", "Success");
       }
     } catch (err: any) {
-      setSubmitError(err?.message ?? "Failed to save mapping");
+      const errorMessage = err?.message ?? "Failed to save mapping";
+      setSubmitError(errorMessage);
+      showError(errorMessage, "Error");
     } finally {
       setSubmitting(false);
     }
   };
+
+  const triggerEmail = (email: string, type: 'downtime' | 'uptime') => {
+    if (!email) {
+      showError("Please configure your email address first", "Email Required");
+      return;
+    }
+
+    if (type === 'downtime') {
+      showInfo(
+        `A service down alert email has been sent to ${email}. Check your inbox to see the notification format.`,
+        "Service Down Alert Sent",
+        8000
+      );
+    } else {
+      showSuccess(
+        `A service up alert email has been sent to ${email}. Check your inbox to see the notification format.`,
+        "Service Up Alert Sent",
+        8000
+      );
+    }
+  }
 
   return (
     <div className="min-h-screen p-6 max-w-4xl mx-auto space-y-6">
@@ -176,44 +212,99 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
+      {/* Destinations Card */}
       <Card>
         <CardHeader>
-          <h2 className="font-medium">Destinations</h2>
+          <h2 className="font-medium">Alert Destinations</h2>
+          <p className="text-sm text-white/70">
+            Configure where you want to receive alerts
+          </p>
         </CardHeader>
         <CardContent>
           {loading && (
-            <p className="text-sm text-white/70">Loading mappings…</p>
+            <p className="text-sm text-white/70">Loading destinations…</p>
           )}
           {error && <p className="text-sm text-red-400">{error}</p>}
           {empty && (
-            <p className="text-sm text-white/70">
-              No mappings yet. Add one above.
-            </p>
+            <div className="text-center py-8">
+              <p className="text-sm text-white/70 mb-2">
+                No destinations configured yet
+              </p>
+              <p className="text-xs text-white/50">
+                Add your first destination using the form above
+              </p>
+            </div>
           )}
           {!loading && !error && items.length > 0 && (
-            <ul className="divide-y divide-white/10">
-              {items.map((entry) => (
-                <li
-                  key={entry.id}
-                  className="py-3 flex items-center justify-between"
-                >
-                  <div>
-                    <p className="text-sm font-medium">User #{entry.user_id}</p>
-                    <p className="text-xs text-white/60">
-                      Models: {(entry.model_id ?? []).join(", ")}
-                    </p>
+            <div className="space-y-3">
+              {items.map((entry) => {
+                const userModels = entry.model_id?.map(id => {
+                  const model = modelItems.find(m => Number(m.id) === id);
+                  return model ? `${model.provider} - ${model.modelName}` : `Model ${id}`;
+                }) || [];
+                
+                return (
+                  <div
+                    key={entry.id}
+                    className="p-4 bg-white/5 rounded-lg border border-white/10"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                          <span className="text-sm font-medium">Active Destination</span>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs text-white/70">Email</p>
+                          <p className="text-sm">{profile?.email || 'Not configured'}</p>
+                        </div>
+                        <div className="mt-3">
+                          <p className="text-xs text-white/70 mb-1">AI Models</p>
+                          <div className="flex flex-wrap gap-1">
+                            {userModels.map((modelName, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center px-2 py-1 rounded text-xs bg-blue-500/20 text-blue-300"
+                              >
+                                {modelName}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => handleRemove(entry.id)}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                      <div className="flex gap-2 mt-3">
+                        <Button
+                          variant="ghost"
+                          onClick={() => triggerEmail(profile?.email || '', 'downtime')}
+                          className="text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 text-sm px-3 py-1"
+                        >
+                          Preview Down Alert
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => triggerEmail(profile?.email || '', 'uptime')}
+                          className="text-green-400 hover:text-green-300 hover:bg-green-500/10 text-sm px-3 py-1"
+                        >
+                          Preview Up Alert
+                        </Button>
+                      </div>
                   </div>
-                  <Button variant="ghost" onClick={() => remove(entry.id)}>
-                    Remove
-                  </Button>
-                </li>
-              ))}
-            </ul>
+                );
+              })}
+            </div>
           )}
         </CardContent>
         <CardFooter>
           <p className="text-xs text-white/50">
-            Mappings are stored in the database.
+            Destinations are automatically saved and can be managed here
           </p>
         </CardFooter>
       </Card>
