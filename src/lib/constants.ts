@@ -12,6 +12,7 @@ export const ROUTES = {
   pages: {
     dashboard: "/dashboard",
     home: "/",
+    register: "/register",
     profile: "/profile",
     models: "/models",
   },

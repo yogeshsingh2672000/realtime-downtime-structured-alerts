@@ -187,8 +187,8 @@ export default function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <h2 className="font-medium">Add destination</h2>
-          <p className="text-sm text-white/70">
+          <h2 className="font-medium text-gray-900 dark:text-white">Add destination</h2>
+          <p className="text-sm text-gray-700 dark:text-white/70">
             Email + LLM provider and model
           </p>
         </CardHeader>
@@ -199,7 +199,7 @@ export default function DashboardPage() {
             className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end"
           >
             <div className="md:col-span-2">
-              <label className="text-xs text-white/70">Email</label>
+              <label className="text-xs text-gray-700 dark:text-white/70">Email</label>
               <Input
                 type="email"
                 placeholder="you@example.com"
@@ -208,7 +208,7 @@ export default function DashboardPage() {
               />
             </div>
             <div>
-              <label className="text-xs text-white/70">Provider</label>
+              <label className="text-xs text-gray-700 dark:text-white/70">Provider</label>
               <Select
                 value={provider}
                 onChange={(e) => {
@@ -227,7 +227,7 @@ export default function DashboardPage() {
               </Select>
             </div>
             <div>
-              <label className="text-xs text-white/70">Model</label>
+              <label className="text-xs text-gray-700 dark:text-white/70">Model</label>
               <Select
                 value={model}
                 onChange={(e) => setModel(e.target.value)}

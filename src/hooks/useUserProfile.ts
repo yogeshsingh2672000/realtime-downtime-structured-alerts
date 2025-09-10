@@ -7,7 +7,7 @@ export type UserProfile = {
   first_name: string | null;
   last_name: string | null;
   email: string | null;
-  phone_number: number | null;
+  phone_number: string | null;
   date_of_birth: string | null; // YYYY-MM-DD
   admin: boolean | null;
   created_at: number;

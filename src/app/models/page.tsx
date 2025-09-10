@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useModels } from "@/hooks/useModels";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { Navbar } from "@/components/Navbar";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/constants";
@@ -17,14 +18,17 @@ import { ROUTES } from "@/lib/constants";
 export default function ModelsPage() {
   const router = useRouter();
   const { items, loading, error, empty, create, update, remove } = useModels();
-  const { user, isAuthenticated } = useAuthContext();
+  const { isAuthenticated } = useAuthContext();
+  const { profile } = useUserProfile();
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated or not admin
   useEffect(() => {
     if (!isAuthenticated) {
       router.replace(ROUTES.pages.home);
+    } else if (profile && !profile.admin) {
+      router.replace(ROUTES.pages.dashboard);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, profile, router]);
 
   const [form, setForm] = useState({
     modelName: "",
@@ -42,7 +46,7 @@ export default function ModelsPage() {
       setSubmitError("Model name and provider are required");
       return;
     }
-    if (!user?.id || !user?.name) {
+    if (!profile?.id || !profile?.first_name) {
       setSubmitError("You must be logged in to create or update models");
       return;
     }
@@ -50,7 +54,7 @@ export default function ModelsPage() {
       setSubmitting(true);
       await create({
         ...form,
-        updatedBy: `${user.id} - ${user.name}`,
+        updatedBy: `${profile.id} - ${profile.first_name} ${profile.last_name || ''}`.trim(),
       });
       setForm({
         modelName: "",

@@ -25,11 +25,24 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Ensure native form controls render dark dropdowns and visible options */
+/* Theme-aware form controls */
 select, input, button, textarea {
+  color-scheme: light;
+}
+
+[data-theme="dark"] select, 
+[data-theme="dark"] input, 
+[data-theme="dark"] button, 
+[data-theme="dark"] textarea {
   color-scheme: dark;
 }
+
 select option {
+  background-color: #ffffff;
+  color: #171717;
+}
+
+[data-theme="dark"] select option {
   background-color: #0a0a0a;
   color: #ededed;
 }

@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
+import { tokenStorage, UserData } from '@/lib/tokenStorage';
+import { ApiService } from '@/lib/api';
+import { tokenExpirationHandler } from '@/lib/tokenExpirationHandler';
 
 interface User {
   id: string;
-  name: string;
   email: string;
-  provider?: string;
+  username?: string;
+  admin?: boolean;
 }
 
 interface AuthState {
@@ -20,10 +23,13 @@ interface LoginCredentials {
 }
 
 interface AuthResponse {
-  success?: boolean;
+  ok?: boolean;
   user?: User;
   authenticated?: boolean;
+  accessToken?: string;
+  expiresIn?: number;
   error?: string;
+  message?: string;
   [key: string]: any; // Allow additional properties from API
 }
 
@@ -40,14 +46,54 @@ export const useAuth = () => {
     checkSession();
   }, []);
 
+  // Start token expiration monitoring when authenticated
+  useEffect(() => {
+    if (authState.isAuthenticated) {
+      tokenExpirationHandler.startMonitoring();
+    } else {
+      tokenExpirationHandler.stopMonitoring();
+    }
+
+    // Listen for token expiration events
+    const handleTokenExpired = () => {
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: 'Session expired. Please log in again.',
+      });
+    };
+
+    window.addEventListener('tokenExpired', handleTokenExpired);
+
+    return () => {
+      tokenExpirationHandler.stopMonitoring();
+      window.removeEventListener('tokenExpired', handleTokenExpired);
+    };
+  }, [authState.isAuthenticated]);
+
   const checkSession = useCallback(async () => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
       
-      const response = await fetch('/api/auth/session');
-      const data: AuthResponse = await response.json();
+      // First check if we have valid tokens locally
+      if (tokenStorage.isAuthenticated()) {
+        const { user } = tokenStorage.getAllData();
+        if (user) {
+          setAuthState({
+            user: user as User,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+          });
+          return;
+        }
+      }
 
-      if (response.ok && data.authenticated && data.user) {
+      // If no valid local tokens, try to get session from server
+      const data: AuthResponse = await ApiService.getSession();
+
+      if (data.authenticated && data.user) {
         setAuthState({
           user: data.user,
           isAuthenticated: true,
@@ -55,6 +101,8 @@ export const useAuth = () => {
           error: null,
         });
       } else {
+        // Clear any invalid tokens
+        tokenStorage.clearTokens();
         setAuthState({
           user: null,
           isAuthenticated: false,
@@ -64,6 +112,8 @@ export const useAuth = () => {
       }
     } catch (error) {
       console.error('Session check error:', error);
+      // Clear tokens on error
+      tokenStorage.clearTokens();
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -77,17 +127,26 @@ export const useAuth = () => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
       
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
+      const data: AuthResponse = await ApiService.login(credentials);
 
-      const data: AuthResponse = await response.json();
+      if (data.ok && data.user && data.accessToken && data.expiresIn) {
+        // Store tokens and user data
+        const userData: UserData = {
+          id: data.user.id,
+          email: data.user.email,
+          username: data.user.username,
+          admin: data.user.admin,
+        };
 
-      if (response.ok && data.user) {
+        tokenStorage.setTokens(
+          {
+            accessToken: data.accessToken,
+            refreshToken: '', // Will be set by cookie
+            expiresAt: Date.now() + (data.expiresIn * 1000),
+          },
+          userData
+        );
+
         setAuthState({
           user: data.user,
           isAuthenticated: true,
@@ -96,7 +155,7 @@ export const useAuth = () => {
         });
         return { success: true, user: data.user };
       } else {
-        const errorMessage = data.error || 'Login failed';
+        const errorMessage = data.error || data.message || 'Login failed';
         setAuthState(prev => ({ ...prev, isLoading: false, error: errorMessage }));
         return { success: false, error: errorMessage };
       }
@@ -111,32 +170,33 @@ export const useAuth = () => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
       
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}), // Empty body for logout
-      });
+      // Stop monitoring
+      tokenExpirationHandler.stopMonitoring();
+      
+      // Clear tokens first
+      tokenStorage.clearTokens();
+      
+      // Call logout API
+      await ApiService.logout();
 
-      if (response.ok) {
-        setAuthState({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: null,
-        });
-        return { success: true };
-      } else {
-        const data: AuthResponse = await response.json();
-        const errorMessage = data.error || 'Logout failed';
-        setAuthState(prev => ({ ...prev, isLoading: false, error: errorMessage }));
-        return { success: false, error: errorMessage };
-      }
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null,
+      });
+      return { success: true };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Logout failed';
-      setAuthState(prev => ({ ...prev, isLoading: false, error: errorMessage }));
-      return { success: false, error: errorMessage };
+      // Even if API call fails, clear local state
+      tokenExpirationHandler.stopMonitoring();
+      tokenStorage.clearTokens();
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null,
+      });
+      return { success: true };
     }
   }, []);
 
