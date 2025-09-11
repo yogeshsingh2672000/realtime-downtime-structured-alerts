@@ -107,19 +107,44 @@ export class ApiService {
   }
 
   static async login(data: { email: string; password: string }) {
-    const response = await apiClient.post('/api/auth/login', data);
-    const { accessToken, refreshToken } = response.data;
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Login failed');
+    }
+    
+    const responseData = await response.json();
+    const { accessToken, refreshToken } = responseData;
     if (accessToken && refreshToken) {
       setTokens(accessToken, refreshToken);
     }
-    return response.data;
+    return responseData;
   }
 
   static async logout() {
     const { refreshToken } = getTokens();
-    const response = await apiClient.post('/api/auth/logout', { refresh_token: refreshToken });
+    const response = await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    
     clearTokens();
-    return response.data;
+    
+    if (!response.ok) {
+      throw new Error('Logout failed');
+    }
+    
+    return await response.json();
   }
 
   static async getSession() {
@@ -141,8 +166,19 @@ export class ApiService {
 
   // User endpoints
   static async getUserProfile() {
-    const response = await apiClient.get('/api/user');
-    return response.data;
+    const response = await fetch('/api/user', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to get user profile');
+    }
+    
+    return await response.json();
   }
 
   static async updateUserProfile(data: {
@@ -153,14 +189,37 @@ export class ApiService {
     date_of_birth?: string | null;
     admin?: boolean | null;
   }) {
-    const response = await apiClient.put('/api/user', data);
-    return response.data;
+    const response = await fetch('/api/user', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to update user profile');
+    }
+    
+    return await response.json();
   }
 
   // Models endpoints
   static async getModels() {
-    const response = await apiClient.get('/api/models');
-    return response.data;
+    const response = await fetch('/api/models', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to get models');
+    }
+    
+    return await response.json();
   }
 
   static async createModel(data: {
@@ -170,8 +229,20 @@ export class ApiService {
     version?: string;
     updatedBy: string;
   }) {
-    const response = await apiClient.post('/api/models', data);
-    return response.data;
+    const response = await fetch('/api/models', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to create model');
+    }
+    
+    return await response.json();
   }
 
   static async updateModel(id: string, data: {
@@ -181,40 +252,110 @@ export class ApiService {
     version?: string;
     updatedBy: string;
   }) {
-    const response = await apiClient.put(`/api/models/${id}`, data);
-    return response.data;
+    const response = await fetch(`/api/models/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to update model');
+    }
+    
+    return await response.json();
   }
 
   static async deleteModel(id: string) {
-    const response = await apiClient.delete(`/api/models/${id}`);
-    return response.data;
+    const response = await fetch(`/api/models/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to delete model');
+    }
+    
+    // For DELETE operations, return success status
+    return { success: true };
   }
 
   // User Model Mapper endpoints
   static async getUserModelMappers(userId: number) {
-    const response = await apiClient.get(`/api/user-model-mapper?user_id=${userId}`);
-    return response.data;
+    const response = await fetch(`/api/user-model-mapper?user_id=${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to get user model mappers');
+    }
+    
+    return await response.json();
   }
 
   static async createUserModelMapper(data: {
     user_id: number;
     model_id: number[];
   }) {
-    const response = await apiClient.post('/api/user-model-mapper', data);
-    return response.data;
+    const response = await fetch('/api/user-model-mapper', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to create user model mapper');
+    }
+    
+    return await response.json();
   }
 
   static async updateUserModelMapper(id: string, data: {
     user_id?: number;
     model_id?: number[] | null;
   }) {
-    const response = await apiClient.put(`/api/user-model-mapper/${id}`, data);
-    return response.data;
+    const response = await fetch(`/api/user-model-mapper/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to update user model mapper');
+    }
+    
+    return await response.json();
   }
 
   static async deleteUserModelMapper(id: string) {
-    const response = await apiClient.delete(`/api/user-model-mapper/${id}`);
-    return response.data;
+    const response = await fetch(`/api/user-model-mapper/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to delete user model mapper');
+    }
+    
+    return await response.json();
   }
 
   // Email endpoints
@@ -226,8 +367,20 @@ export class ApiService {
     serviceName: string;
     additionalInfo: string;
   }) {
-    const response = await apiClient.post('/api/email/trigger', data);
-    return response.data;
+    const response = await fetch('/api/email/trigger', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to trigger email');
+    }
+    
+    return await response.json();
   }
 }
 
