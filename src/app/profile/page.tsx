@@ -55,6 +55,7 @@ export default function ProfilePage() {
       return;
     }
     try {
+      console.log('Saving profile with data:', formData); // Debug log
       await save({
         first_name: formData.first_name || null,
         last_name: formData.last_name || null,
@@ -63,7 +64,9 @@ export default function ProfilePage() {
         date_of_birth: formData.date_of_birth || null,
         admin: formData.admin,
       });
+      console.log('Profile saved successfully'); // Debug log
     } catch (err) {
+      console.error('Error saving profile:', err); // Debug log
       // Error is handled by the hook
     }
   };

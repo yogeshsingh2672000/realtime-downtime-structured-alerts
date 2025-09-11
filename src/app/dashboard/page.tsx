@@ -29,6 +29,13 @@ export default function DashboardPage() {
   const { items, loading, error, empty, create, update, remove } =
     useUserModelMapper(userId);
 
+  // Debug logging
+  console.log('Dashboard - userId:', userId);
+  console.log('Dashboard - profile:', profile);
+  console.log('Dashboard - userModelMapper items:', items);
+  console.log('Dashboard - userModelMapper loading:', loading);
+  console.log('Dashboard - userModelMapper error:', error);
+
   const handleRemove = async (id: string) => {
     try {
       await remove(id);
@@ -45,7 +52,6 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated, router]);
 
-  const [email, setEmail] = useState("");
   const providers = useMemo(() => {
     const uniq = new Set<string>();
     for (const m of modelItems) {
@@ -124,7 +130,7 @@ export default function DashboardPage() {
 
   const triggerEmail = async (email: string, type: 'downtime' | 'uptime') => {
     if (!email) {
-      showError("Please configure your email address first", "Email Required");
+      showError("Please configure your email address in your profile first", "Email Required");
       return;
     }
 
@@ -189,24 +195,15 @@ export default function DashboardPage() {
         <CardHeader>
           <h2 className="font-medium text-gray-900 dark:text-white">Add destination</h2>
           <p className="text-sm text-gray-700 dark:text-white/70">
-            Email + LLM provider and model
+            LLM provider and model
           </p>
         </CardHeader>
         <CardContent>
           {modelsError && <p className="text-sm text-red-400">{modelsError}</p>}
           <form
             onSubmit={onSubmit}
-            className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end"
+            className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end"
           >
-            <div className="md:col-span-2">
-              <label className="text-xs text-gray-700 dark:text-white/70">Email</label>
-              <Input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
             <div>
               <label className="text-xs text-gray-700 dark:text-white/70">Provider</label>
               <Select
@@ -240,7 +237,7 @@ export default function DashboardPage() {
                 ))}
               </Select>
             </div>
-            <div className="md:col-span-4 flex items-center gap-3">
+            <div className="md:col-span-2 flex items-center gap-3">
               <Button type="submit" disabled={submitting}>
                 {submitting ? "Adding…" : "Add"}
               </Button>

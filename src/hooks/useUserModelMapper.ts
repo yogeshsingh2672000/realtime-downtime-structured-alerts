@@ -24,10 +24,15 @@ export function useUserModelMapper(userId?: number) {
   const fetchAll = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('useUserModelMapper - fetching for userId:', userId);
       const data = await ApiService.getUserModelMappers(userId || 0);
-      setItems(normalize(data));
+      console.log('useUserModelMapper - API response:', data);
+      const normalizedData = normalize(data);
+      console.log('useUserModelMapper - normalized data:', normalizedData);
+      setItems(normalizedData);
       setError(null);
     } catch (e: any) {
+      console.error('useUserModelMapper - error:', e);
       setError(e?.message ?? "Failed to load mappings");
       setItems([]);
     } finally {

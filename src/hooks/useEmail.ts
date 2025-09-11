@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useState } from "react";
+import { getTokens } from "@/lib/api";
 
 export type EmailType = "downtime" | "uptime";
 
@@ -36,10 +37,13 @@ export function useEmail() {
       setLoading(true);
       setError(null);
       
+      const { accessToken } = getTokens();
+      
       const response = await fetch('/api/email/trigger', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
         },
         body: JSON.stringify(payload),
       });
