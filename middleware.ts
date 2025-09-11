@@ -7,16 +7,10 @@ export function middleware(request: NextRequest) {
                      request.nextUrl.pathname.startsWith("/models");
   if (!isProtected) return NextResponse.next();
   
-  // Check for the auth_flow_completed cookie that's set by the login API
-  const authFlowCookie = request.cookies.get("auth_flow_completed");
-  if (authFlowCookie?.value === "true") {
-    return NextResponse.next();
-  }
-  
-  // If no auth cookie, redirect to home
-  const url = request.nextUrl.clone();
-  url.pathname = "/";
-  return NextResponse.redirect(url);
+  // For protected routes, let the client-side authentication handle the redirect
+  // The middleware should not block access since authentication is handled client-side
+  // with JWT tokens stored in memory
+  return NextResponse.next();
 }
 
 export const config = {

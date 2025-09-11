@@ -123,8 +123,20 @@ export class ApiService {
   }
 
   static async getSession() {
-    const response = await apiClient.get('/api/auth/session');
-    return response.data;
+    // Use the Next.js API route instead of calling backend directly
+    const response = await fetch('/api/auth/session', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Session check failed');
+    }
+    
+    return await response.json();
   }
 
   // User endpoints
